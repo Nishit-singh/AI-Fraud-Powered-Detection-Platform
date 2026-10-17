@@ -13,6 +13,7 @@ venv/
 env/
 .venv/
 *.pkl
+!backend/ml/models/fraud_xgb_model.pkl
 !backend/ml/models/.gitkeep
 
 # Data (large files — add manually)
