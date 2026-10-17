@@ -11,6 +11,7 @@ Key design choice — scale_pos_weight vs SMOTE:
 
 import os
 import json
+# pyrefly: ignore [missing-import]
 import joblib
 import numpy as np
 import pandas as pd
@@ -20,6 +21,7 @@ from sklearn.metrics import (
     precision_score, recall_score, f1_score, roc_auc_score,
     confusion_matrix, classification_report
 )
+# pyrefly: ignore [missing-import]
 from xgboost import XGBClassifier
 
 # Paths

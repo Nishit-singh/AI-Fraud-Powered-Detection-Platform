@@ -11,7 +11,7 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func, Integer
 
 from app.models.database import get_db
 from app.models.transaction import Transaction
@@ -119,15 +119,24 @@ async def get_transactions(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     risk_level: Optional[str] = Query(None, description="Filter: low | medium | high"),
+    is_fraud: Optional[bool] = Query(None, description="Filter: true = fraud only, false = normal only"),
+    reviewed: Optional[bool] = Query(None, description="Filter: true = reviewed, false = unreviewed"),
+    source: Optional[str] = Query(None, description="Filter: simulate | manual | csv"),
     from_date: Optional[datetime] = Query(None),
     to_date: Optional[datetime] = Query(None),
     db: Session = Depends(get_db),
 ):
-    """Return paginated transaction history, filterable by risk_level and date range."""
+    """Return paginated transaction history, filterable by risk_level, is_fraud, reviewed, source, and date range."""
     query = db.query(Transaction)
 
     if risk_level:
         query = query.filter(Transaction.risk_level == risk_level)
+    if is_fraud is not None:
+        query = query.filter(Transaction.is_fraud == is_fraud)
+    if reviewed is not None:
+        query = query.filter(Transaction.reviewed == reviewed)
+    if source:
+        query = query.filter(Transaction.source == source)
     if from_date:
         query = query.filter(Transaction.transaction_time >= from_date)
     if to_date:
@@ -162,16 +171,45 @@ async def review_transaction(tx_id: int, db: Session = Depends(get_db)):
     return {"id": tx_id, "reviewed": True, "message": "Transaction marked as reviewed"}
 
 
+@router.get(
+    "/transactions/{tx_id}",
+    summary="Get a single transaction by ID (full detail including V1-V28)"
+)
+async def get_transaction(tx_id: int, db: Session = Depends(get_db)):
+    """
+    Returns the full Transaction record including all PCA features (V1-V28),
+    engineered features, prediction results, and metadata.
+    """
+    tx = db.query(Transaction).filter(Transaction.id == tx_id).first()
+    if not tx:
+        raise HTTPException(status_code=404, detail=f"Transaction #{tx_id} not found")
+
+    # Build a complete dict — avoids partial schema issues with V columns
+    result = {
+        "id": tx.id,
+        "transaction_time": tx.transaction_time,
+        "amount": tx.amount,
+        "is_fraud": tx.is_fraud,
+        "fraud_probability": tx.fraud_probability,
+        "risk_level": tx.risk_level,
+        "transaction_hour": tx.transaction_hour,
+        "amount_zscore": tx.amount_zscore,
+        "is_simulated": tx.is_simulated,
+        "source": tx.source,
+        "reviewed": tx.reviewed,
+        "features": {f"V{i}": getattr(tx, f"v{i}", None) for i in range(1, 29)},
+    }
+    return result
+
+
 @router.get("/transactions/stats/hourly", summary="Fraud rate bucketed by hour")
 async def hourly_fraud_stats(db: Session = Depends(get_db)):
     """Returns transaction counts and fraud rate per hour for the line chart."""
-    from sqlalchemy import func
-
     results = (
         db.query(
             Transaction.transaction_hour,
             func.count(Transaction.id).label("total"),
-            func.sum(Transaction.is_fraud.cast(int)).label("fraud_count"),
+            func.sum(Transaction.is_fraud.cast(Integer)).label("fraud_count"),
         )
         .group_by(Transaction.transaction_hour)
         .order_by(Transaction.transaction_hour)

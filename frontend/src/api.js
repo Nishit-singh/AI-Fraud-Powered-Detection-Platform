@@ -32,7 +32,22 @@ export const api = {
       r.json()
     ),
 
+  // Get single transaction detail (full, incl. V1-V28)
+  getTransaction: (id) =>
+    fetch(`${API_BASE}/transactions/${id}`).then((r) => r.json()),
+
   // Hourly fraud stats for chart
   getHourlyStats: () =>
     fetch(`${API_BASE}/transactions/stats/hourly`).then((r) => r.json()),
+
+  // Batch CSV prediction — POST /api/predict/batch
+  predictBatch: (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return fetch(`${API_BASE}/predict/batch`, {
+      method: 'POST',
+      body: form,
+      // NOTE: do NOT set Content-Type — the browser adds the multipart boundary automatically
+    }).then((r) => r.json());
+  },
 };

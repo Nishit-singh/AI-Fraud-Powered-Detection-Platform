@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app.models.database import create_tables
-from app.api import predict, transactions, metrics
+from app.api import predict, transactions, metrics, batch
 
 CORS_ORIGINS = os.getenv(
     "CORS_ORIGINS",
@@ -57,6 +57,7 @@ app.add_middleware(
 
 # Register routers
 app.include_router(predict.router, prefix="/api", tags=["Prediction"])
+app.include_router(batch.router,   prefix="/api", tags=["Prediction"])
 app.include_router(transactions.router, prefix="/api", tags=["Transactions"])
 app.include_router(metrics.router, prefix="/api", tags=["Metrics"])
 

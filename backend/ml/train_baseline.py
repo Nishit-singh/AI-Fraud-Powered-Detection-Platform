@@ -21,6 +21,7 @@ from sklearn.metrics import (
     precision_score, recall_score, f1_score, roc_auc_score,
     confusion_matrix, classification_report
 )
+# pyrefly: ignore [missing-import]
 from imblearn.over_sampling import SMOTE
 
 # Paths

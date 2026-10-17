@@ -1,18 +1,19 @@
 {
-  "model": "Logistic Regression (DEMO)",
-  "note": "Run train_baseline.py with real creditcard.csv for accurate metrics",
-  "precision": 0.732,
-  "recall": 0.681,
-  "f1": 0.706,
-  "roc_auc": 0.941,
+  "model": "Logistic Regression (SMOTE)",
+  "precision": 0.055658627087198514,
+  "recall": 0.9183673469387755,
+  "f1": 0.10495626822157435,
+  "roc_auc": 0.9717941411229658,
   "confusion_matrix": [
     [
-      9790,
-      22
+      55337,
+      1527
     ],
     [
-      63,
-      125
+      8,
+      90
     ]
-  ]
+  ],
+  "test_size": 56962,
+  "fraud_in_test": 98
 }
